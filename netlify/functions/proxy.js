@@ -1,40 +1,45 @@
-// File: netlify/functions/proxy.js (VERSI PERBAIKAN)
-const axios = require('axios');
+const chromium = require('chrome-aws-lambda');
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin());
 
-exports.handler = async function (event, context) {
-  const targetUrl = event.queryStringParameters.url;
+// Daftar proxy/VPN endpoint Anda (SOCKS5/HTTP)
+const PROXIES = [
+  'socks5://user:pass@us.vpnproxy.com:1080',
+  'socks5://user:pass@uk.vpnproxy.com:1080',
+  'socks5://user:pass@de.vpnproxy.com:1080',
+  'socks5://user:pass@fr.vpnproxy.com:1080',
+  'socks5://user:pass@jp.vpnproxy.com:1080'
+];
 
-  if (!targetUrl) {
-    return {
-      statusCode: 400,
-      body: 'URL parameter is required',
-    };
-  }
+exports.handler = async (event, context) => {
+  // Ambil indeks instance dari query string ?i=1..5
+  const idx = Math.min(Math.max(parseInt(event.queryStringParameters?.i) || 1, 1), PROXIES.length) - 1;
+  const proxyUrl = PROXIES[idx];
 
-  try {
-    const response = await axios.get(targetUrl, {
-      responseType: 'arraybuffer', // Ambil sebagai data mentah
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-      }
-    });
+  // Launch headless Chrome
+  const browser = await puppeteer.launch({
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      `--proxy-server=${proxyUrl}`
+    ].concat(chromium.args),
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath,
+    headless: chromium.headless,
+  });
 
-    // Ambil content-type dari respons asli
-    const contentType = response.headers['content-type'];
+  const page = await browser.newPage();
+  // Emulasi device, misal Pixel 5
+  await page.emulate(puppeteer.devices['Pixel 5']);
+  await page.goto('https://www.youtube.com', { waitUntil: 'networkidle2' });
 
-    // Kirim kembali data mentah dalam format Base64
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': contentType
-      },
-      body: Buffer.from(response.data, 'binary').toString('base64'),
-      isBase64Encoded: true,
-    };
-  } catch (error) {
-    return {
-      statusCode: 502,
-      body: `Proxy error: ${error.message}`,
-    };
-  }
+  const content = await page.content();
+  await browser.close();
+
+  return {
+    statusCode: 200,
+    headers: { 'Content-Type': 'text/html' },
+    body: content
+  };
 };
