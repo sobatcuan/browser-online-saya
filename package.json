@@ -1,7 +1,18 @@
 {
-  "name": "proyek-browser-online",
+  "name": "browser-online-saya",
   "version": "1.0.0",
+  "main": "netlify/functions/proxy.js",
+  "scripts": {
+    "start": "netlify dev"
+  },
   "dependencies": {
-    "axios": "^1.7.2"
+    "express": "^4.19.2",
+    "chrome-aws-lambda": "^15.1.0",
+    "puppeteer-extra": "^3.3.4",
+    "puppeteer-extra-plugin-stealth": "^2.11.1"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": "14.x"
   }
 }
