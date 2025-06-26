@@ -6,12 +6,11 @@
     "start": "netlify dev"
   },
   "dependencies": {
-    "express": "^4.19.2",
     "chrome-aws-lambda": "^15.1.0",
+    "puppeteer-core": "^22.10.0",
     "puppeteer-extra": "^3.3.4",
     "puppeteer-extra-plugin-stealth": "^2.11.1"
   },
-  "devDependencies": {},
   "engines": {
     "node": "14.x"
   }
