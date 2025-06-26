@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Gemini Browser</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; } body { background: #202124; font-family: Roboto, sans-serif; color: #fff; overflow: hidden; } #container { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px,1fr)); gap: 16px; padding: 16px; height: 100vh; overflow-y: auto; } .mini-browser { display: flex; flex-direction: column; height: 400px; background: #303134; border-radius: 12px; overflow: hidden; position: relative; border: 1px solid #3c4043; } .mb-header { display: flex; align-items: center; padding: 8px; background: #3c4043; gap: 4px; } .mb-header button { background: transparent; border: none; padding: 6px; cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 50%; transition: background-color 0.2s; } .mb-header button:hover { background-color: rgba(255,255,255,0.1); } .mb-header button img { width: 20px; height: 20px; opacity: 0.9; } .mb-header input { flex: 1; margin: 0 4px; padding: 6px 12px; border: none; border-radius: 16px; background: #202124; color: #fff; font-size: 14px; outline: none; } .mb-shortcuts { display: flex; overflow-x: auto; gap: 8px; padding: 8px; background: #2a2b2e; border-bottom: 1px solid #3c4043; } .mb-shortcuts .shortcut { flex: 0 0 auto; text-align: center; cursor: pointer; width: 48px; } .mb-shortcuts .shortcut img { width: 32px; height: 32px; border-radius: 50%; background: #3c4043; object-fit: cover; } .mb-shortcuts .shortcut span { display: block; font-size: 10px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 4px; color: #bdc1c6; } .mb-content { flex: 1; background: #fff; position: relative; } .mb-content iframe { width: 100%; height: 100%; border: none; margin: 0; background: #fff; } .fs { position: fixed !important; top: 0; left: 0; right: 0; bottom: 0; width: 100% !important; height: 100% !important; z-index: 9999; border-radius: 0 !important; border: none !important; }
+  </style>
+</head>
+<body>
+  <div id="container"></div>
+  <script>
+    const DEFAULT_SHORTCUTS = [ { title: 'Google',  icon: 'https://s2.googleusercontent.com/s2/favicons?domain=google.com',  url: 'https://google.com' }, { title: 'YouTube', icon: 'https://s2.googleusercontent.com/s2/favicons?domain=youtube.com', url: 'https://m.youtube.com' }, { title: 'Wikipedia', icon: 'https://s2.googleusercontent.com/s2/favicons?domain=wikipedia.org', url: 'https://www.wikipedia.org'}, { title: 'GitHub', icon: 'https://s2.googleusercontent.com/s2/favicons?domain=github.com', url: 'https://github.com' } ];
+    function createMiniBrowser() {
+      const mb = document.createElement('div'); mb.className = 'mini-browser'; const hdr = document.createElement('div'); hdr.className = 'mb-header'; const input = document.createElement('input'); input.placeholder = 'Telusuri atau ketik URL'; const btnSearch = document.createElement('button'); btnSearch.innerHTML = '<img src="https://img.icons8.com/material-rounded/24/ffffff/search.png" alt="Cari"/>'; const btnMax = document.createElement('button'); btnMax.title = "Layar Penuh"; btnMax.innerHTML = '<img src="https://img.icons8.com/material-outlined/24/ffffff/fullscreen.png" alt="Layar Penuh"/>'; const btnOpenExt = document.createElement('button'); btnOpenExt.title = 'Buka di Tab Baru'; btnOpenExt.innerHTML = '<img src="https://img.icons8.com/material-outlined/24/ffffff/external-link.png" alt="Buka Eksternal"/>';
+      hdr.append(input, btnSearch, btnMax, btnOpenExt); mb.append(hdr); const scBar = document.createElement('div'); scBar.className = 'mb-shortcuts'; mb.append(scBar); const content = document.createElement('div'); content.className = 'mb-content'; const frame = document.createElement('iframe'); frame.src = 'about:blank'; frame.sandbox = "allow-forms allow-scripts allow-same-origin allow-popups allow-presentation"; content.appendChild(frame); mb.append(content);
+      function loadURL(raw) { let url = raw.trim(); if (!url) return; if (!/^(https?:\/\/)/i.test(url)) { if (url.includes('.') && !url.includes(' ')) { url = 'https://' + url; } else { url = 'https://www.google.com/search?q=' + encodeURIComponent(url); } } input.value = url; const ytMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|watch\?v=|v\/))([\w-]{11})/); if (ytMatch && ytMatch[1]) { frame.src = `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&mute=1`; return; }
+      const proxied = '/.netlify/functions/proxy?url=' + encodeURIComponent(url); frame.src = proxied;
+      }
+      DEFAULT_SHORTCUTS.forEach(item => { const d = document.createElement('div'); d.className = 'shortcut'; d.innerHTML = `<img src="${item.icon}" alt="${item.title}"/><span>${item.title}</span>`; d.onclick = () => loadURL(item.url); scBar.appendChild(d); });
+      btnSearch.onclick = () => loadURL(input.value); input.addEventListener('keydown', e => { if (e.key === 'Enter') loadURL(input.value); }); btnMax.onclick = () => { mb.classList.toggle('fs'); const icon = mb.classList.contains('fs') ? 'fullscreen-exit' : 'fullscreen'; btnMax.innerHTML = `<img src="https://img.icons8.com/material-outlined/24/ffffff/${icon}.png" alt="Layar Penuh"/>`; };
+      btnOpenExt.onclick = () => { const url = input.value.trim(); if (url) { window.open(url, '_blank'); } }; return mb;
+    }
+    const container = document.getElementById('container'); 
+    // Anda bisa mengubah angka 4 di bawah ini jika ingin jumlah kotak yang berbeda
+    for (let i = 0; i < 4; i++) { 
+      container.appendChild(createMiniBrowser()); 
+    }
+  </script>
+</body>
+</html>
